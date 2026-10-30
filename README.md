@@ -1,6 +1,6 @@
 # Comércio Exterior Brasileiro (2024–2026)
 
-Dashboard de exportação e importação por município e produto (SH4), de **out/2024 a set/2026**: os 24 meses fechados mais recentes da base do MDIC (Comex Stat). Valores em US$ FOB nominais.
+Dashboard de exportação e importação por município e produto (SH4), de **out/2024 a set/2026**: os 24 meses fechados mais recentes da base do MDIC (Comex Stat). Valores em US$ FOB.
 
 Carreguei 2024 inteiro no PostgreSQL para o cálculo de desvio de out/2024 ter o mês anterior como base, mas os visuais mostram só os 24 meses. Além das análises de município, produto e desvio mensal, incluí uma página de parceiros comerciais (país e bloco econômico).
 
@@ -10,7 +10,7 @@ Carreguei 2024 inteiro no PostgreSQL para o cálculo de desvio de out/2024 ter o
 
 No `staging` os CSVs entram como vieram, tudo texto. No `dw` ficam as views com tipos, nomes tratados e o modelo estrela. Usei views para poder mudar regra sem recarregar dado. O Power BI conecta só no `dw`, em modo Importar.
 
-**Ferramentas:** PostgreSQL 18, DBeaver, dbdiagram.io e Power BI Desktop (Power Query e DAX).
+**Ferramentas:** PostgreSQL, DBeaver, dbdiagram.io e Power BI Desktop (Power Query e DAX).
 
 ## Fonte e arquivos utilizados
 
