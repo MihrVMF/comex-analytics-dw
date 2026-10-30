@@ -140,4 +140,6 @@ Também conferi:
 
 ## Como reproduzir do zero
 
-Criar o banco `comex` com os schemas `staging` e `dw`, colocar os CSVs do Comex Stat em `C:\comex\dados\`, rodar os scripts de `01` a `05` no PostgreSQL e abrir o PBIX. Se o PostgreSQL estiver em outro endereço, basta ajustar a fonte em *Transformar dados > Configurações da fonte de dados*.
+## Como reproduzir do zero
+
+Criar o banco `comex` com os schemas `staging` e `dw`, colocar os CSVs do Comex Stat ([disponíveis em `COMEX.TABLES.zip` na aba Releases](https://github.com/MihrVMF/comex-analytics-dw/releases/tag/v1.0)) em `C:\comex\dados\`, rodar os scripts de `01` a `05` no PostgreSQL e abrir o PBIX. Se o PostgreSQL estiver em outro endereço, basta ajustar a fonte em *Transformar dados > Configurações da fonte de dados*.
