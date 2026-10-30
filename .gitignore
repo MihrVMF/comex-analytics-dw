@@ -1,0 +1,9 @@
+# Dados brutos CSV (MDIC Comex Stat - >400MB)
+dados/
+*.csv
+
+# Arquivos temporários do Power BI / Sistema
+*.pbit
+~$*
+.DS_Store
+Thumbs.db
