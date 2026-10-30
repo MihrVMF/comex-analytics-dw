@@ -1,8 +1,12 @@
 # Comércio Exterior Brasileiro (2024–2026)
 
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-316192?style=for-the-badge&logo=postgresql&logoColor=white) ![Power BI](https://img.shields.io/badge/Power_BI-F2C811?style=for-the-badge&logo=powerbi&logoColor=black) ![DAX](https://img.shields.io/badge/DAX-F2C811?style=for-the-badge&logo=powerbi&logoColor=black) ![SQL](https://img.shields.io/badge/SQL-Data_Warehouse-316192?style=for-the-badge)
+
 Dashboard de exportação e importação por município e produto (SH4), de **out/2024 a set/2026**: os 24 meses fechados mais recentes da base do MDIC (Comex Stat). Valores em US$ FOB.
 
 Carreguei 2024 inteiro no PostgreSQL para o cálculo de desvio de out/2024 ter o mês anterior como base, mas os visuais mostram só os 24 meses. Além das análises de município, produto e desvio mensal, incluí uma página de parceiros comerciais (país e bloco econômico).
+
+![Visão Geral](imagens/01-visao-geral.png)
 
 ## Arquitetura e ferramentas
 
