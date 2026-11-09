@@ -1,145 +1,128 @@
-# Comércio Exterior Brasileiro (2024–2026)
+# Comércio Exterior Brasileiro (2024 a 2026)
 
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-316192?style=for-the-badge&logo=postgresql&logoColor=white) ![Power BI](https://img.shields.io/badge/Power_BI-F2C811?style=for-the-badge&logo=powerbi&logoColor=black) ![DAX](https://img.shields.io/badge/DAX-F2C811?style=for-the-badge&logo=powerbi&logoColor=black) ![SQL](https://img.shields.io/badge/SQL-Data_Warehouse-316192?style=for-the-badge)
 
-Dashboard de exportação e importação por município e produto (SH4), de **out/2024 a set/2026**: os 24 meses fechados mais recentes da base do MDIC (Comex Stat). Valores em US$ FOB.
+Painel analítico de comércio exterior desenvolvido com base nos dados abertos do Comex Stat (MDIC), consolidando exportações e importações brasileiras por município e produto (nível SH4) na série histórica de **outubro de 2024 a setembro de 2026** (os 24 meses fechados mais recentes). Valores expressos em US$ FOB.
 
-Carreguei 2024 inteiro no PostgreSQL para o cálculo de desvio de out/2024 ter o mês anterior como base, mas os visuais mostram só os 24 meses. Além das análises de município, produto e desvio mensal, incluí uma página de parceiros comerciais (país e bloco econômico).
+O projeto une engenharia de dados em PostgreSQL (carga bruta, limpeza via SQL e modelagem dimensional) e desenvolvimento de dashboards no Power BI, oferecendo respostas rápidas sobre a balança comercial, os principais municípios exportadores e os fluxos comerciais com parceiros internacionais.
+
+* **Arquivo Power BI (.pbix):** [dashboard/comex_dashboard.pbix](dashboard/comex_dashboard.pbix)
+* **Documentação em PDF:** [docs/Documentacao_Dashboard_Comex.pdf](docs/Documentacao_Dashboard_Comex.pdf)
+* **Visualização das Telas (PDF):** [dashboard/comex_dashboard.pdf](dashboard/comex_dashboard.pdf)
+* **Base de dados bruta dos CSVs:** [Disponível na aba Releases (v1.0)](https://github.com/MihrVMF/comex-analytics-dw/releases/tag/v1.0)
 
 ![Visão Geral](imagens/01-visao-geral.png)
 
-## Arquitetura e ferramentas
+## O problema que o projeto resolve
 
-`Arquivos CSV (MDIC)` → `PostgreSQL (schema staging)` → `PostgreSQL (schema dw)` → `Power BI`
+A base oficial do Comex Stat publica mensalmente arquivos volumosos em formato CSV que somam mais de 8 milhões de registros de movimentação comercial, além de dezenas de tabelas de correlação. Consumir esses arquivos diretamente no Power BI sem tratamento prévio costuma travar o relatório, perder códigos com zeros à esquerda e gerar duplicidade em cruzamentos de blocos econômicos.
 
-No `staging` os CSVs entram como vieram, tudo texto. No `dw` ficam as views com tipos, nomes tratados e o modelo estrela. Usei views para poder mudar regra sem recarregar dado. O Power BI conecta só no `dw`, em modo Importar.
+Para solucionar esse problema, estruturei um fluxo em duas etapas no PostgreSQL: primeiro recebi os dados brutos no schema `staging` sem alterações; em seguida, construí o schema `dw` com uma modelagem dimensional Star Schema (tabelas fato e dimensão em views analíticas). Dessa forma, o Power BI consome um modelo limpo, rápido e com integridade referencial garantida.
 
-**Ferramentas:** PostgreSQL, DBeaver, dbdiagram.io e Power BI Desktop (Power Query e DAX).
+## Principais insights encontrados
 
-## Fonte e arquivos utilizados
+* **Superávit comercial:** Nos 24 meses analisados, o Brasil exportou **US$ 715,0 bilhões** e importou **US$ 569,0 bilhões**, gerando um saldo positivo de **US$ 145,9 bilhões**.
+* **Alta concentração de produtos:** Apenas 38 produtos na classificação SH4 respondem por 80% do total exportado. Soja, óleos brutos de petróleo e minérios de ferro somam sozinhos 34% de todas as exportações brasileiras.
+* **Polos exportadores e importadores:** São necessários 220 municípios para atingir 80% das exportações. Na importação a concentração é ainda maior, bastando 102 municípios para cobrir 80% do volume nacional (com destaque para polos portuários e industriais como Itajaí e Manaus).
+* **Liderança por domicílio fiscal:** O município do Rio de Janeiro lidera as exportações com US$ 84,5 bilhões por sediar grandes petroleiras, já que a base oficial adota o endereço fiscal da matriz da empresa declarante.
+* **Dinâmica com parceiros comerciais:** A China é o principal parceiro e o maior gerador de superávit do Brasil (US$ 202,6 bilhões em compras e US$ 55,7 bilhões de saldo favorável). Com os Estados Unidos, segundo maior destino, o saldo comercial é deficitário em US$ 10,8 bilhões.
+* **Comportamento sazonal:** As exportações apresentam queda no primeiro bimestre e aceleram fortemente a partir de março (altas de 26,3% em março de 2025 e 20,9% em março de 2026), acompanhando o calendário de escoamento da safra agrícola.
 
-Comex Stat (MDIC): item 2, base por município e SH4, e item 4, tabelas de correlação. Foram 13 arquivos:
+## Telas do Painel
 
-| Arquivo | Para que usei | Observação |
-|---|---|---|
-| `EXP_2024_MUN`, `EXP_2025_MUN`, `EXP_2026_MUN` | Fato de exportação | 3.252.883 linhas no total |
-| `IMP_2024_MUN`, `IMP_2025_MUN`, `IMP_2026_MUN` | Fato de importação | 4.903.515 linhas no total |
-| `EXP_TOTAIS_CONFERENCIA_MUN`, `IMP_TOTAIS_CONFERENCIA_MUN` | Conferir se a carga estava completa | Trazem os totais oficiais de 1997 a 2026; usei só 2024 a 2026 |
-| `NCM_SH` | Nome do produto, SH2 e seção | Está no nível SH6 (6.620 linhas); precisei agrupar para SH4 |
-| `UF_MUN` | Nome do município | 5.570 municípios, na mesma codificação da fato |
-| `UF` | UF e região | Região vem escrita como "REGIAO NORTE" |
-| `PAIS` | Nome do país e código ISO | 281 países |
-| `PAIS_BLOCO` | Bloco econômico do país | 324 linhas, 11 blocos |
+### 1. Visão Geral
+Painel executivo com a balança comercial consolidada dos 24 meses, total de exportações, importações, saldo comercial em US$ FOB e gráfico de desvio mês a mês.
+![Visão Geral](imagens/01-visao-geral.png)
 
-Fatos e conferência em ASCII; auxiliares em Latin-1.
+### 2. Análise por Municípios
+Ranking dos principais polos municipais exportadores e importadores, mapas de calor por estado e proporção de representatividade regional.
+![Municípios](imagens/02-municipios.png)
 
-## Banco de dados: schemas, tabelas e views
+### 3. Produtos (SH4)
+Visão detalhada por código e descrição de mercadorias no nível SH4, distribuição por seções tarifárias e curva de concentração de itens exportados.
+![Produtos SH4](imagens/03-produtos-sh4.png)
 
-O banco se chama `comex` e tem dois schemas.
+### 4. Desvio Mensal
+Acompanhamento comparativo entre meses consecutivos, evolução do superávit comercial e sinalização visual de oscilações anormais no volume transacionado.
+![Desvio Mensal](imagens/04-desvio-mensal.png)
 
-### Schema `staging` (dados brutos, tudo como `text`)
+### 5. Parceiros Comerciais
+Fluxo financeiro por países e blocos econômicos (Mercosul, União Europeia, NAFTA, entre outros) e saldo bilateral de cada parceiro.
+![Parceiros Comerciais](imagens/05-parceiros-comerciais.png)
 
-| Tabela | Colunas | Linhas |
-|---|---|---:|
-| `staging.exp_mun` | `co_ano, co_mes, sh4, co_pais, sg_uf_mun, co_mun, kg_liquido, vl_fob` | 3.252.883 |
-| `staging.imp_mun` | mesmas colunas da exportação | 4.903.515 |
-| `staging.exp_conferencia` | `arquivo, co_ano, kg_liquido, vl_fob, numero_linhas` | 30 |
-| `staging.imp_conferencia` | mesmas colunas | 30 |
-| `staging.ncm_sh_raw` | `linha` (a linha inteira do CSV, sem separar) | 6.620 |
-| `staging.ncm_sh` | os 16 campos do NCM_SH separados via SQL + `qtd_campos` | 6.620 |
-| `staging.uf_mun` | `co_mun_geo, no_mun, no_mun_min, sg_uf` | 5.570 |
-| `staging.uf` | `co_uf, sg_uf, no_uf, no_regiao` | UFs + códigos especiais |
-| `staging.pais` | `co_pais, co_pais_ison3, co_pais_isoa3, no_pais, no_pais_ing, no_pais_esp` | 281 |
-| `staging.pais_bloco` | `co_pais, co_bloco, no_bloco, no_bloco_ing, no_bloco_esp` | 324 |
+## Modelagem do Banco de Dados (Star Schema)
 
-### Schema `dw` (views consumidas pelo Power BI)
-
-| View | Colunas | Linhas | Origem |
-|---|---|---:|---|
-| `dw.fato_comex` | `data, fluxo, sh4, co_pais, co_mun, kg_liquido, vl_fob` | 8.156.398 | `exp_mun UNION ALL imp_mun` |
-| `dw.dim_municipio` | `co_mun, no_mun, municipio_uf, sg_uf, no_uf, regiao` | 5.570 | `uf_mun LEFT JOIN uf` |
-| `dw.dim_produto` | `sh4, no_sh4, produto, co_sh2, no_sh2, co_secao, no_secao` | 1.274 | `ncm_sh` agrupado por SH4 |
-| `dw.dim_pais` | `co_pais, no_pais, iso3` | 281 | `pais` |
-| `dw.ponte_pais_bloco` | `co_pais, co_bloco, no_bloco` | 318 | `pais_bloco` sem os códigos órfãos |
-
-A `dim_calendario` foi feita em DAX no Power BI, marcada como tabela de data.
-
-## Modelo de dados
+A camada analítica no PostgreSQL segue os princípios de modelagem dimensional de Ralph Kimball. O modelo estrela foi estruturado para suportar o volume de mais de 8,1 milhões de linhas na fato sem perda de performance.
 
 ![Modelo de dados](imagens/diagrama.png)
 
-Granularidade da fato: uma linha por mês, fluxo, SH4, país e município. Exportação e importação ficam na mesma fato, separadas pela coluna `fluxo`.
+### Estrutura das Tabelas e Views no PostgreSQL
 
-53 países estão em mais de um bloco (ex.: Alemanha em Europa e UE). Por isso o bloco fica numa tabela ponte ligada à `dim_pais` e não na fato, senão os valores duplicariam. A ponte é a única relação bidirecional no Power BI, para o filtro de bloco chegar até a fato (testei com "União Europeia": a exportação foi de US$ 715 bi para US$ 106 bi).
+* **Camada Staging (`schema staging`):**
+  * Tabelas brutas importadas via comando `COPY` a partir dos arquivos CSV originais do MDIC (`staging.exp_mun` com 3,25 milhões de linhas e `staging.imp_mun` com 4,90 milhões de linhas).
+  * Todos os campos preservados em texto para evitar quebras por formatação e permitir limpeza controlada via queries SQL.
 
-## Problemas encontrados e tratamentos
+* **Tabela Fato (`dw.fato_comex`):**
+  * Consolidação unificada de exportação e importação via `UNION ALL`, somando **8.156.398 linhas**.
+  * Granularidade da fato: uma linha por mês, fluxo comercial (Exportação ou Importação), produto (SH4), país e município de origem ou destino.
+  * Colunas de métrica: `kg_liquido` (peso em quilogramas) e `vl_fob` (valor monetário em dólares).
 
-Nenhum valor da fato foi alterado ou excluído.
+* **Tabelas Dimensão (`schema dw`):**
+  * `dw.dim_municipio`: 5.570 municípios brasileiros tratados com chave SECEX, nome corrigido, estado e região geográfica (tratando homônimos entre diferentes estados com o padrão "Nome do Município (UF)").
+  * `dw.dim_produto`: 1.274 produtos agregados no nível SH4 a partir do cadastro original em SH6, incluindo código e nome do capítulo (SH2) e da seção tarifária internacional.
+  * `dw.dim_pais`: 281 países normalizados com nomes em português e códigos oficiais ISO Alpha 3.
+  * `dw.ponte_pais_bloco`: tabela ponte criada especificamente para resolver o relacionamento de muitos para muitos entre países e blocos econômicos sem duplicar os valores das transações na fato. 53 países pertencem a mais de um bloco comercial (a exemplo da Alemanha, que integra a União Europeia e o continente europeu). Essa ponte garante a filtragem correta no Power BI sem inflar a balança comercial.
+  * `dim_calendario`: gerada via DAX com marcação de tabela de data oficial para dar suporte aos cálculos de inteligência temporal.
 
-- **NCM_SH com aspas sem escape** no meio do texto, o que quebrava o `COPY`. Carreguei a linha inteira e separei os campos por `";"` em SQL; as 6.620 linhas saíram com 16 campos.
-- **Encoding:** auxiliares carregadas como Latin-1 para manter os acentos.
-- **Códigos como texto** (SH4, país, município, mês) para não perder zero à esquerda.
-- **Produto:** `NCM_SH` vem em SH6; agrupei em SH4 (1.274), depois de conferir que cada SH4 tem nome, SH2 e seção únicos.
-- **Município:** rótulo "Município - UF" com `NO_MUN_MIN` (com acento), porque há nomes repetidos entre estados.
-- **Região:** "REGIAO NORTE" virou "Norte" etc. Exterior (`9300000`) e Não Declarado (`9999999`) ficaram em "Outros" e foram mantidos, pois fazem parte do total oficial.
-- **Blocos:** 5 códigos de país em `PAIS_BLOCO` não existem em `PAIS` (`008, 106, 286, 579, 855`). Saíram da ponte, sem impacto, pois não aparecem na fato.
-- **Código de município:** a base usa codificação SECEX (diferente do IBGE), mas a `UF_MUN` usa a mesma, então o JOIN é direto.
+## Desafios de Engenharia de Dados e Soluções em SQL
 
-## Validações
+* **Aspas sem escape no cadastro de produtos:** O arquivo oficial `NCM_SH` possuía aspas duplas desbalanceadas no meio das descrições de mercadorias, causando falha no comando `COPY` tradicional do PostgreSQL. Carreguei o arquivo em uma coluna bruta única e utilizei funções de string em SQL (`split_part`) para segmentar com segurança os 16 campos das 6.620 linhas.
+* **Padronização de encodings:** Os arquivos de movimentação estavam codificados em ASCII, enquanto as tabelas auxiliares de municípios e produtos utilizavam Latin-1. Configurei a leitura de cada arquivo com sua codificação correspondente para preservar todos os caracteres acentuados.
+* **Preservação de zeros à esquerda:** Códigos de municípios, países, meses e SH4 foram modelados e tipados como texto no banco para evitar a perda de dígitos iniciais (como municípios iniciados por zero).
+* **Higienização de registros órfãos:** Na tabela oficial de blocos econômicos, identifiquei 5 códigos de países inexistentes na tabela mestre de países (códigos 008, 106, 286, 579 e 855). Foram excluídos da tabela ponte no SQL sem qualquer impacto na integridade, já que nenhum deles possuía movimentações na fato.
 
-Linhas, KG e US$ FOB bateram 100% com os arquivos oficiais de conferência do MDIC:
+## Validação e Qualidade dos Dados
 
-| Fluxo | Ano | Linhas | Exportação/Importação (US$ FOB) | Conferência oficial |
+Para garantir precisão contábil idêntica à dos relatórios oficiais do Ministério do Desenvolvimento, Indústria, Comércio e Serviços (MDIC), validei cada etapa da carga e modelagem comparando os resultados do PostgreSQL e do Power BI com os arquivos de conferência oficiais:
+
+| Fluxo | Ano | Linhas na Fato | Volume em Dólares (US$ FOB) | Status da Validação |
 |---|---|---:|---:|---|
-| Exportação | 2024 | 1.144.828 | 337.046.161.710 | Linhas, KG e US$ batem |
-| Exportação | 2025 | 1.207.088 | 348.278.462.500 | Linhas, KG e US$ batem |
-| Exportação | 2026 (jan–set) | 900.967 | 284.654.368.793 | Linhas, KG e US$ batem |
-| Importação | 2024 | 1.729.056 | 262.869.606.174 | Linhas, KG e US$ batem |
-| Importação | 2025 | 1.798.254 | 280.208.433.825 | Linhas, KG e US$ batem |
-| Importação | 2026 (jan–set) | 1.376.205 | 222.258.509.601 | Linhas, KG e US$ batem |
+| **Exportação** | 2024 | 1.144.828 | 337.046.161.710 | Batimento exato (linhas, KG e US$) |
+| **Exportação** | 2025 | 1.207.088 | 348.278.462.500 | Batimento exato (linhas, KG e US$) |
+| **Exportação** | 2026 (jan a set) | 900.967 | 284.654.368.793 | Batimento exato (linhas, KG e US$) |
+| **Importação** | 2024 | 1.729.056 | 262.869.606.174 | Batimento exato (linhas, KG e US$) |
+| **Importação** | 2025 | 1.798.254 | 280.208.433.825 | Batimento exato (linhas, KG e US$) |
+| **Importação** | 2026 (jan a set) | 1.376.205 | 222.258.509.601 | Batimento exato (linhas, KG e US$) |
 
-Também conferi:
-- a view `fato_comex` contra a conferência, depois da conversão de tipos;
-- chaves únicas nas dimensões e zero órfão da fato sem dimensão;
-- Power BI x SQL: mesmas 8.156.398 linhas e mesmos totais por ano (página oculta "Validação" no PBIX);
-- o mesmo total de 24 meses em todas as páginas. Essa última pegou um erro meu: com `ALLSELECTED` o ranking mudava quando eu filtrava Top N no visual. Troquei por `ALL` na coluna analisada.
+* As 8.156.398 linhas da view `dw.fato_comex` batem integralmente com os totais importados no Power BI.
+* A consistência do total dos 24 meses foi auditada entre todas as páginas do relatório para certificar que filtros de Top N e ranking não distorcessem o totalizador geral.
 
-## O que os dados mostram
+## Tecnologias Utilizadas
 
-- Em 24 meses: exportação de **US$ 715,0 bi**, importação de **US$ 569,0 bi** e superávit de **US$ 145,9 bi**. De 2024 para 2025 a exportação cresceu 3,3% e a importação 6,6%.
-- **38 produtos SH4** fazem 80% da exportação. Petróleo, soja e minério de ferro sozinhos somam 34%.
-- São **220 municípios** para 80% da exportação e **102** na importação, que é mais concentrada (Itajaí e Manaus na frente).
-- O **Rio de Janeiro** lidera a exportação (US$ 84,5 bi) por ser sede de petroleiras, já que o município na base é o domicílio fiscal da empresa.
-- A **China** compra US$ 202,6 bi, quase 3x os EUA, e gera o maior superávit (US$ 55,7 bi). Com os **EUA** o saldo é negativo (US$ -10,8 bi), apesar de serem o 2º maior comprador. Maiores déficits: Rússia e Alemanha.
-- A exportação cai no início do ano e salta em março (mar/25 +26,3%; mar/26 +20,9%). Pode ter relação com a safra de soja, não cheguei a testar.
+* **Banco de Dados:** PostgreSQL (estruturação dos schemas `staging` e `dw`, tabelas e views analíticas).
+* **Linguagem SQL:** Carga volumosa de dados, limpeza de caracteres especiais, joins dimensionais e conciliação de totais.
+* **Power BI:** Modelagem em esquema estrela, relacionamento com tabela ponte, medidas em DAX e construção visual interativa.
 
-## Páginas do dashboard
+## Arquivos do Projeto
 
-![Visão Geral](imagens/01-visao-geral.png)
-
-![Municípios](imagens/02-municipios.png)
-
-![Produtos SH4](imagens/03-produtos-sh4.png)
-
-![Desvio Mensal](imagens/04-desvio-mensal.png)
-
-![Parceiros Comerciais](imagens/05-parceiros-comerciais.png)
-
-## Arquivos do projeto
-
-| Arquivo | Conteúdo |
+| Arquivo / Pasta | Conteúdo |
 |---|---|
-| `sql/01_carga_staging.sql` | Criação e carga das tabelas `staging`, incluindo o tratamento do `NCM_SH` |
-| `sql/02_dim_municipio.sql` | View `dw.dim_municipio` e conferências |
-| `sql/03_dim_produto.sql` | View `dw.dim_produto` e conferências |
-| `sql/04_dim_pais_ponte_bloco.sql` | Views `dw.dim_pais` e `dw.ponte_pais_bloco` |
-| `sql/05_fato_comex.sql` | View `dw.fato_comex` e testes de validação |
-| `dashboard/comex_dashboard.pbix` | Relatório completo (modelo, medidas e 5 páginas + validação oculta) |
-| `dashboard/comex_dashboard.pdf` | Exportação das páginas do relatório |
-| `docs/Documentacao_Dashboard_Comex.pdf` | Documentação original do projeto |
+| `sql/01_carga_staging.sql` | Criação das tabelas do schema `staging` e script de carga dos arquivos CSV |
+| `sql/02_dim_municipio.sql` | Construção da view `dw.dim_municipio` com tratamentos de texto e UFs |
+| `sql/03_dim_produto.sql` | Construção da view `dw.dim_produto` agregando NCM no nível SH4 |
+| `sql/04_dim_pais_ponte_bloco.sql` | Criação das views `dw.dim_pais` e `dw.ponte_pais_bloco` |
+| `sql/05_fato_comex.sql` | Criação da view `dw.fato_comex` consolidando exportações e importações |
+| `dashboard/comex_dashboard.pbix` | Relatório completo do Power BI com o modelo semântico e as 5 páginas |
+| `dashboard/comex_dashboard.pdf` | Exportação em PDF de todas as páginas do painel |
+| `docs/Documentacao_Dashboard_Comex.pdf` | Documentação técnica original do projeto |
 
-## Como reproduzir do zero
+## Como reproduzir o projeto localmente
 
-## Como reproduzir do zero
+1. **Configuração do Banco no PostgreSQL:**
+   * Crie uma base chamada `comex`.
+   * Baixe os arquivos CSV na [aba Releases do repositório](https://github.com/MihrVMF/comex-analytics-dw/releases/tag/v1.0) e extraia na pasta `C:\comex\dados\`.
+   * Execute os scripts da pasta `sql/` na sequência numérica (de `01` até `05`).
 
-Criar o banco `comex` com os schemas `staging` e `dw`, colocar os CSVs do Comex Stat ([disponíveis em `COMEX.TABLES.zip` na aba Releases](https://github.com/MihrVMF/comex-analytics-dw/releases/tag/v1.0)) em `C:\comex\dados\`, rodar os scripts de `01` a `05` no PostgreSQL e abrir o PBIX. Se o PostgreSQL estiver em outro endereço, basta ajustar a fonte em *Transformar dados > Configurações da fonte de dados*.
+2. **Abrir o Painel no Power BI:**
+   * Abra o arquivo [dashboard/comex_dashboard.pbix](dashboard/comex_dashboard.pbix) no Power BI Desktop.
+   * Se o seu PostgreSQL estiver em outra porta ou servidor, ajuste a conexão em: *Transformar dados > Configurações da fonte de dados*.
